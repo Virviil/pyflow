@@ -1,51 +1,109 @@
+// use std::iter::Map;
+
 // use serde::{Deserialize, Serialize};
 
-// enum Readme {
+// #[derive(Serialize, Deserialize, Debug)]
+// pub enum Readme {
 //     Link(String),
-//     Table(Vec<Vec<String>>),
+//     DynamicLink(ReadmeDynamicLink),
 // }
 
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct ReadmeDynamicLink {
+//     pub file: Option<String>,
+//     pub text: Option<String>,
+//     #[serde(rename = "content-type")]
+//     pub content_type: Option<String>,
+//     pub charset: Option<String>,
+// }
 
-// pub struct PYProject {
-//     pub project: Project
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct License {
+//     pub file: Option<String>,
+//     pub text: Option<String>,
+// }
+
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct Author {
+//     pub name: Option<String>,
+//     pub email: Option<String>,
+// }
+
+// pub struct PyProject {
+//     pub project: Option<Project>,
 // }
 
 // #[derive(Serialize, Deserialize, Debug)]
 // pub struct Project {
 //     pub name: Option<String>,
-//     pub version: Option<Version>,
+//     pub version: Option<String>,
 //     pub description: Option<String>,
 //     pub readme: Option<Readme>,
-//     pub requires_python: Option<Version>,
-//     pub license: Option<String>,
-//     pub authors: Option<String>,
-//     pub maintainers: Option<String>,
+//     pub requires_python: Option<String>,
+//     pub license: Option<License>,
+//     // Authors and maintainers
+//     pub authors: Option<Vec<Author>>,
+//     pub maintainers: Option<Vec<Author>>,
 //     pub keywords: Vec<String>,
 //     pub classifiers: Vec<String>, // https://pypi.org/classifiers/
-//     pub urls: Option<Map<String, i64>>,
-
-//     pub py_version: Option<Version>,
-//     pub reqs: Vec<Req>,
-//     pub dev_reqs: Vec<Req>,
-//     pub version: Option<Version>,
-//     pub authors: Vec<String>,
-//     pub license: Option<String>,
-//     pub extras: HashMap<String, String>,
-
-//     pub keywords: Vec<String>,
-//     pub homepage: Option<String>,
-//     pub repository: Option<String>,
-//     pub repo_url: Option<String>,
-//     pub package_url: Option<String>,
-
-//     pub build: Option<String>, // A python file used to build non-python extensions
-//     //    entry_points: HashMap<String, Vec<String>>, // todo option?
-//     pub scripts: HashMap<String, String>, //todo: put under [tool.pyflow.scripts] ?
-//     //    console_scripts: Vec<String>, // We don't parse these; pass them to `setup.py` as-entered.
-//     pub python_requires: Option<String>,
+//     pub urls: Option<Map<String, String>>,
+//     // Entry points
+//     pub scripts: String,
+//     #[serde(rename = "gui-scripts")]
+//     pub gui_scripts: String,
+//     #[serde(rename = "entry-points")]
+//     pub entry_points: String,
 // }
 
 // #[cfg(test)]
 // mod tests {
-
+//     const PYPROJECT_TOML: &str = indoc::indoc! {r#"
+//     [project]
+//     name = "spam"
+//     version = "2020.0.0"
+//     description = "Lovely Spam! Wonderful Spam!"
+//     readme = "README.rst"
+//     requires-python = ">=3.8"
+//     license = {file = "LICENSE.txt"}
+//     keywords = ["egg", "bacon", "sausage", "tomatoes", "Lobster Thermidor"]
+//     authors = [
+//       {email = "hi@pradyunsg.me"},
+//       {name = "Tzu-Ping Chung"}
+//     ]
+//     maintainers = [
+//       {name = "Brett Cannon", email = "brett@python.org"}
+//     ]
+//     classifiers = [
+//       "Development Status :: 4 - Beta",
+//       "Programming Language :: Python"
+//     ]
+    
+//     dependencies = [
+//       "httpx",
+//       "gidgethub[httpx]>4.0.0",
+//       "django>2.1; os_name != 'nt'",
+//       "django>2.0; os_name == 'nt'"
+//     ]
+    
+//     [project.optional-dependencies]
+//     test = [
+//       "pytest < 5.0.0",
+//       "pytest-cov[all]"
+//     ]
+    
+//     [project.urls]
+//     homepage = "example.com"
+//     documentation = "readthedocs.org"
+//     repository = "github.com"
+//     changelog = "github.com/me/spam/blob/master/CHANGELOG.md"
+    
+//     [project.scripts]
+//     spam-cli = "spam:main_cli"
+    
+//     [project.gui-scripts]
+//     spam-gui = "spam:main_gui"
+    
+//     [project.entry-points."spam.magical"]
+//     tomatoes = "spam:main_tomatoes"
+//     "#};
 // }

@@ -1,5 +1,6 @@
 pub mod deps;
 pub mod paths;
+pub mod pep508deps;
 pub mod prompts;
 
 mod os;
