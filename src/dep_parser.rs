@@ -3,7 +3,7 @@ use std::str::FromStr;
 use nom::bytes::complete::{tag, take, take_till};
 use nom::character::complete::{digit1, space0, space1};
 use nom::combinator::{flat_map, map, map_parser, map_res, opt, value};
-use nom::multi::separated_list;
+use nom::multi::separated_list1;
 use nom::sequence::{delimited, preceded, separated_pair, tuple};
 use nom::{branch::alt, character::is_alphabetic};
 use nom::{AsChar, IResult, InputTakeAtPosition};
@@ -84,7 +84,7 @@ pub fn parse_wh_py_vers(input: &str) -> IResult<&str, Vec<Constraint>> {
             vec![Constraint::new(ReqType::Gte, Version::new(2, 0, 0))]
         }),
         map(parse_version, |v| vec![Constraint::new(ReqType::Caret, v)]),
-        separated_list(tag("."), parse_wh_py_ver),
+        separated_list1(tag("."), parse_wh_py_ver),
     ))(input)
 }
 
@@ -124,7 +124,7 @@ fn parse_install_with_extras(input: &str) -> IResult<&str, Vec<String>> {
     map(
         delimited(
             tag("["),
-            separated_list(tag(","), parse_package_name),
+            separated_list1(tag(","), parse_package_name),
             tag("]"),
         ),
         |extras| extras.iter().map(|x| x.to_string()).collect(),
@@ -133,7 +133,7 @@ fn parse_install_with_extras(input: &str) -> IResult<&str, Vec<String>> {
 
 pub fn parse_extras(input: &str) -> IResult<&str, Extras> {
     map(
-        separated_list(
+        separated_list1(
             delimited(space0, tag("and"), space0),
             delimited(
                 opt(preceded(tag("("), space0)),
@@ -163,11 +163,11 @@ pub fn parse_extras(input: &str) -> IResult<&str, Extras> {
     )(input)
 }
 
-fn parse_extra_part(input: &str) -> IResult<&str, ExtrasPart> {
+fn parse_extra_part<'a>(input: &'a str) -> IResult<&'a str, ExtrasPart> {
     flat_map(
         alt((tag("extra"), tag("sys_platform"), tag("python_version"))),
         |type_| {
-            move |input: &str| match type_ {
+            move |input: &'a str| match type_ {
                 "extra" => map(
                     preceded(
                         separated_pair(space0, tag("=="), space0),
@@ -196,7 +196,7 @@ fn parse_extra_part(input: &str) -> IResult<&str, ExtrasPart> {
 }
 
 pub fn parse_constraints(input: &str) -> IResult<&str, Vec<Constraint>> {
-    separated_list(tuple((space0, tag(","), space0)), parse_constraint)(input)
+    separated_list1(tuple((space0, tag(","), space0)), parse_constraint)(input)
 }
 
 pub fn parse_constraint(input: &str) -> IResult<&str, Constraint> {
