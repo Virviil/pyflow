@@ -1,16 +1,63 @@
-use std::str::FromStr;
-
+// Quick link: https://www.python.org/dev/peps/pep-0508/
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_while1},
-    character::complete::{one_of, space0},
+    bytes::complete::{tag, take, take_while, take_while1},
+    character::{
+        complete::{alphanumeric1, one_of, satisfy, space0},
+        is_alphanumeric,
+    },
     error::VerboseError,
-    multi::{many1, separated_nonempty_list},
+    multi::{many0, many1, many_m_n, separated_list1},
     sequence::{self, delimited, pair, tuple},
     IResult,
 };
 
 type Res<T, U> = IResult<T, U, VerboseError<T>>;
+
+// Root level structure
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Specification {
+    UrlReq(UrlReq),
+    NameReq(NameReq),
+}
+
+
+// Entire specification
+fn specification(input: &str) -> Res<&str, Specification> {
+    delimited(
+        space0,
+        alt((
+            nom::combinator::map(url_req, |url_req: UrlReq| Specification::UrlReq(url_req)),
+            nom::combinator::map(name_req, |name_req: NameReq| {
+                Specification::NameReq(name_req)
+            }),
+        )),
+        space0,
+    )(input)
+}
+
+
+// URL Req part - one of 2 global parts
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UrlReq {
+    pub unimplemented: String,
+}
+
+fn url_req(i: &str) -> Res<&str, UrlReq> {
+    tuple((
+        name, // name
+        space0,
+        opt(extras), // extras
+        space0,
+        urlspec, // urlspecq
+        
+    ))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NameReq {
+    pub unimplemented: String,
+}
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum VersionCmp {
@@ -40,13 +87,13 @@ impl From<&str> for VersionCmp {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 enum URIReference {
     URI(URI),
     RelativeReference,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 struct URI {
     scheme: String,
     hier_part: HierPart,
@@ -96,7 +143,7 @@ fn version_one(input: &str) -> Res<&str, Version> {
 }
 
 fn version_many(input: &str) -> Res<&str, Vec<Version>> {
-    separated_nonempty_list(
+    separated_list1(
         pair(space0, nom::character::complete::char(',')),
         version_one,
     )(input)
@@ -123,9 +170,27 @@ fn urlspec(input: &str) -> Res<&str, &str> {
 //     alt((version_cmp,))
 // }
 
+fn identifier(input: &str) -> Res<&str, String> {
+    pair(
+        satisfy(|c| c.is_alphanumeric()),
+        many0(alt((
+            nom::combinator::map(satisfy(|c| c.is_alphanumeric()), |c: char| c.to_string()),
+            nom::combinator::map(
+                pair(
+                    take_while(|c| "-_.".contains(c)),
+                    satisfy(|c| c.is_alphanumeric()),
+                ),
+                |(a, b)| format!("{}{}", a, b),
+            ),
+        ))),
+    )(input)
+    .map(|(next_input, parsed)| (next_input, format!("{}{}", parsed.0, parsed.1.join(""))))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
 
     #[test]
     fn test_version_cmp() {
@@ -182,5 +247,20 @@ mod tests {
                 ]
             ))
         );
+    }
+
+    #[rstest(input, expected,
+        case("pyflow", Ok(("", "pyflow".to_string()))),
+        case("py-flow", Ok(("", "py-flow".to_string()))),
+        case("py_flow", Ok(("", "py_flow".to_string()))),
+        case("py.flow", Ok(("", "py.flow".to_string()))),
+        case("py.flow2", Ok(("", "py.flow2".to_string()))),
+        case("py.flow2???", Ok(("???", "py.flow2".to_string()))),
+        case("py.flow2.", Ok((".", "py.flow2".to_string()))),
+        case("py.flow2-asdf_asdf-", Ok(("-", "py.flow2-asdf_asdf".to_string()))),
+        case("py.flow2-asdf_asdf_", Ok(("_", "py.flow2-asdf_asdf".to_string()))),
+    )]
+    fn test_parse_identifier(input: &str, expected: Res<&str, String>) {
+        assert_eq!(identifier(input), expected);
     }
 }
